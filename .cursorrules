@@ -1,0 +1,41 @@
+# OmniChannel E-Commerce Platform — Project Rules
+
+## Tech Stack
+- Backend: Express.js + TypeScript + Mongoose (MongoDB)
+- Frontend: React + Vite + TypeScript + Tailwind CSS v4
+- Real-time: Socket.io
+- Cache/Sessions: Redis
+- Payments: Stripe
+- File Storage: AWS S3
+- Email: SendGrid
+- Containerization: Docker Compose
+
+## Architecture Rules
+- Monorepo: /client and /server are separate workspaces
+- Server structure: src/{config,routes,controllers,models,services,middleware,utils}
+- Every route needs: route file → controller → service layer (business logic stays in services, NOT controllers)
+- All DB operations use Mongoose models — never raw MongoDB queries
+- Use MongoDB sessions for transactions (stock reservation, order creation)
+
+## Code Style
+- TypeScript strict mode — no `any` types without explicit comment explaining why
+- Use async/await everywhere — no .then() chains
+- All API responses follow this format: { success: boolean, data?: T, message?: string, error?: string }
+- Error handling via a global error middleware — never send raw errors to client
+- Environment variables only through process.env, validated at startup
+
+## Authentication
+- JWT in HTTP-only cookies (not localStorage)
+- Access token: 15min, Refresh token: 7d rotated and stored in Redis
+- 4 roles: superAdmin, vendorManager, warehouseStaff, customer
+- Role-based access via middleware that checks req.user.role
+
+## Database Conventions
+- All timestamps: { createdAt, updatedAt } via Mongoose timestamps option
+- Soft delete with `isDeleted` boolean field, never hard-delete
+- Inventory uses `reservedQty` field for checkout stock holding (15-min TTL)
+- Indexes on all queryable fields + compound indexes for common queries
+
+## Reference Document
+- Full development plan with schemas, API specs, and roadmap: docs/OmniChannel_ECommerce_Development_Plan.pdf
+- When building any feature, consult the PDF first for field-level schema details
