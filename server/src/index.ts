@@ -4,7 +4,9 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import { connectRedis } from "./config/redis";
+import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
+import { ApiError } from "./utils/ApiError";
 
 dotenv.config();
 
@@ -23,6 +25,12 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+
+app.use((req, _res, next) => {
+  next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
+});
+
+app.use(errorHandler);
 
 const start = async () => {
   try {

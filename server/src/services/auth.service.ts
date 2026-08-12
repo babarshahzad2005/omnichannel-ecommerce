@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { getRedis } from "../config/redis";
 import { User, type IUser, type UserRole } from "../models/user/User";
-import { AppError } from "../utils/errors";
+import { ApiError } from "../utils/ApiError";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -57,7 +57,7 @@ export const register = async (
   const existingUser = await User.findOne({ email: data.email });
 
   if (existingUser) {
-    throw new AppError(409, "Email is already registered");
+    throw new ApiError(409, "Email is already registered");
   }
 
   const user = await User.create({
@@ -86,13 +86,13 @@ export const login = async (
   const user = await User.findOne({ email: email.toLowerCase() });
 
   if (!user || !user.isActive) {
-    throw new AppError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid email or password");
   }
 
   const isPasswordValid = await user.comparePassword(password);
 
   if (!isPasswordValid) {
-    throw new AppError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid email or password");
   }
 
   user.lastLogin = new Date();
@@ -114,26 +114,26 @@ export const refreshTokens = async (
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {
-    throw new AppError(401, "Invalid or expired refresh token");
+    throw new ApiError(401, "Invalid or expired refresh token");
   }
 
   const redis = getRedis();
   const storedHash = await redis.get(`refresh:${payload.id}`);
 
   if (!storedHash) {
-    throw new AppError(401, "Refresh token has been revoked");
+    throw new ApiError(401, "Refresh token has been revoked");
   }
 
   const isTokenValid = await bcrypt.compare(refreshToken, storedHash);
 
   if (!isTokenValid) {
-    throw new AppError(401, "Invalid refresh token");
+    throw new ApiError(401, "Invalid refresh token");
   }
 
   const user = await User.findById(payload.id);
 
   if (!user || !user.isActive) {
-    throw new AppError(401, "User not found or inactive");
+    throw new ApiError(401, "User not found or inactive");
   }
 
   return issueTokenPair(user._id.toString(), user.role, user.email);
@@ -148,7 +148,7 @@ export const getCurrentUser = async (userId: string): Promise<SafeUser> => {
   const user = await User.findById(userId).select("-password");
 
   if (!user || !user.isActive) {
-    throw new AppError(404, "User not found");
+    throw new ApiError(404, "User not found");
   }
 
   return user.toObject() as SafeUser;

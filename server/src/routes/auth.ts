@@ -1,34 +1,17 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { body, validationResult } from "express-validator";
+import { body } from "express-validator";
 import { authenticate } from "../middleware/auth";
+import { validate } from "../middleware/validate";
 import * as authService from "../services/auth.service";
+import { ApiError } from "../utils/ApiError";
+import { success } from "../utils/apiResponse";
 import {
   accessTokenCookieOptions,
   clearCookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookies";
-import { AppError } from "../utils/errors";
 
 const router = Router();
-
-const handleValidationErrors = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      data: errors.array(),
-    });
-    return;
-  }
-
-  next();
-};
 
 const setAuthCookies = (
   res: Response,
@@ -43,37 +26,16 @@ const clearAuthCookies = (res: Response): void => {
   res.clearCookie("refreshToken", clearCookieOptions);
 };
 
-const handleRouteError = (
-  err: unknown,
-  res: Response,
-  fallbackMessage: string
-): void => {
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-    });
-    return;
-  }
-
-  console.error(err);
-  res.status(500).json({
-    success: false,
-    message: fallbackMessage,
-  });
-};
-
 router.post(
   "/register",
-  [
+  ...validate([
     body("name").trim().notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email is required"),
     body("password")
       .isLength({ min: 8 })
       .withMessage("Password must be at least 8 characters"),
-  ],
-  handleValidationErrors,
-  async (req: Request, res: Response) => {
+  ]),
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { user, tokens } = await authService.register({
         name: req.body.name,
@@ -82,26 +44,20 @@ router.post(
       });
 
       setAuthCookies(res, tokens);
-
-      res.status(201).json({
-        success: true,
-        data: user,
-        message: "Registration successful",
-      });
+      success(res, user, 201);
     } catch (err) {
-      handleRouteError(err, res, "Registration failed");
+      next(err);
     }
   }
 );
 
 router.post(
   "/login",
-  [
+  ...validate([
     body("email").isEmail().withMessage("Valid email is required"),
     body("password").notEmpty().withMessage("Password is required"),
-  ],
-  handleValidationErrors,
-  async (req: Request, res: Response) => {
+  ]),
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { user, tokens } = await authService.login(
         req.body.email,
@@ -109,67 +65,54 @@ router.post(
       );
 
       setAuthCookies(res, tokens);
-
-      res.json({
-        success: true,
-        data: user,
-        message: "Login successful",
-      });
+      success(res, user);
     } catch (err) {
-      handleRouteError(err, res, "Login failed");
+      next(err);
     }
   }
 );
 
-router.post("/refresh", async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.refreshToken;
-
-  if (!refreshToken) {
-    res.status(401).json({
-      success: false,
-      message: "Refresh token is required",
-    });
-    return;
-  }
-
+router.post("/refresh", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      throw new ApiError(401, "Refresh token is required");
+    }
+
     const tokens = await authService.refreshTokens(refreshToken);
     setAuthCookies(res, tokens);
-
-    res.json({
-      success: true,
-      message: "Tokens refreshed successfully",
-    });
+    success(res, { refreshed: true });
   } catch (err) {
-    handleRouteError(err, res, "Token refresh failed");
+    next(err);
   }
 });
 
-router.post("/logout", authenticate, async (req: Request, res: Response) => {
-  try {
-    await authService.logout(req.user!.id);
-    clearAuthCookies(res);
-
-    res.json({
-      success: true,
-      message: "Logout successful",
-    });
-  } catch (err) {
-    handleRouteError(err, res, "Logout failed");
+router.post(
+  "/logout",
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.logout(req.user!.id);
+      clearAuthCookies(res);
+      success(res, { loggedOut: true });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-router.get("/me", authenticate, async (req: Request, res: Response) => {
-  try {
-    const user = await authService.getCurrentUser(req.user!.id);
-
-    res.json({
-      success: true,
-      data: user,
-    });
-  } catch (err) {
-    handleRouteError(err, res, "Failed to fetch user profile");
+router.get(
+  "/me",
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await authService.getCurrentUser(req.user!.id);
+      success(res, user);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 export default router;
