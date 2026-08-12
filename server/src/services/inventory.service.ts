@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { type ClientSession, Types } from "mongoose";
 import { Inventory, type IInventory } from "../models/inventory/Inventory";
 import { StockReservation } from "../models/inventory/StockReservation";
 import { Product } from "../models/product/Product";
@@ -78,7 +78,8 @@ export const reserveStock = async (
   productId: string,
   qty: number,
   sessionId: string,
-  warehouse = "main"
+  warehouse = "main",
+  externalSession?: ClientSession
 ): Promise<IInventory> => {
   if (qty <= 0) {
     throw new ApiError(400, "Reservation quantity must be greater than 0");
@@ -95,14 +96,18 @@ export const reserveStock = async (
     product: productId,
     sessionId,
     warehouse,
-  });
+  }).session(externalSession ?? null);
 
   if (existingReservation) {
     throw new ApiError(409, "Stock already reserved for this session");
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const ownSession = !externalSession;
+  const session = externalSession ?? (await mongoose.startSession());
+
+  if (ownSession) {
+    session.startTransaction();
+  }
 
   try {
     const inventory = await Inventory.findOneAndUpdate(
@@ -133,10 +138,15 @@ export const reserveStock = async (
       { session }
     );
 
-    await session.commitTransaction();
+    if (ownSession) {
+      await session.commitTransaction();
+    }
+
     return inventory;
   } catch (err) {
-    await session.abortTransaction();
+    if (ownSession) {
+      await session.abortTransaction();
+    }
 
     if (err instanceof ApiError) {
       throw err;
@@ -144,7 +154,9 @@ export const reserveStock = async (
 
     throw new ApiError(409, "Insufficient stock available");
   } finally {
-    session.endSession();
+    if (ownSession) {
+      session.endSession();
+    }
   }
 };
 
@@ -207,14 +219,19 @@ export const confirmSale = async (
   productId: string,
   qty: number,
   sessionId?: string,
-  warehouse = "main"
+  warehouse = "main",
+  externalSession?: ClientSession
 ): Promise<IInventory> => {
   if (qty <= 0) {
     throw new ApiError(400, "Sale quantity must be greater than 0");
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const ownSession = !externalSession;
+  const session = externalSession ?? (await mongoose.startSession());
+
+  if (ownSession) {
+    session.startTransaction();
+  }
 
   try {
     if (sessionId) {
@@ -255,13 +272,21 @@ export const confirmSale = async (
       throw new ApiError(409, "Unable to confirm sale due to insufficient stock");
     }
 
-    await session.commitTransaction();
+    if (ownSession) {
+      await session.commitTransaction();
+    }
+
     return inventory;
   } catch (err) {
-    await session.abortTransaction();
+    if (ownSession) {
+      await session.abortTransaction();
+    }
+
     throw err;
   } finally {
-    session.endSession();
+    if (ownSession) {
+      session.endSession();
+    }
   }
 };
 

@@ -10,6 +10,8 @@ import categoryRoutes from "./routes/category";
 import productRoutes from "./routes/product";
 import inventoryRoutes from "./routes/inventory";
 import cartRoutes from "./routes/cart";
+import orderRoutes from "./routes/order";
+import adminOrderRoutes from "./routes/admin/order";
 import { ApiError } from "./utils/ApiError";
 import { startCronJobs } from "./utils/stockCron";
 
@@ -34,6 +36,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/admin/orders", adminOrderRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
