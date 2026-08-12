@@ -355,6 +355,23 @@ export const getInventoryByProductId = async (
   return inventory;
 };
 
+export const getAvailableQty = async (
+  productId: string,
+  warehouse = "main"
+): Promise<number> => {
+  if (!Types.ObjectId.isValid(productId)) {
+    throw new ApiError(400, "Invalid product ID");
+  }
+
+  const inventory = await Inventory.findOne({ product: productId, warehouse });
+
+  if (!inventory) {
+    return 0;
+  }
+
+  return inventory.quantity - inventory.reservedQty;
+};
+
 export const getPublicStockStatus = async (
   productId: string,
   warehouse = "main"

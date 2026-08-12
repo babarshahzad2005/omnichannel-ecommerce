@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth";
 import categoryRoutes from "./routes/category";
 import productRoutes from "./routes/product";
 import inventoryRoutes from "./routes/inventory";
+import cartRoutes from "./routes/cart";
 import { ApiError } from "./utils/ApiError";
 import { startCronJobs } from "./utils/stockCron";
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
