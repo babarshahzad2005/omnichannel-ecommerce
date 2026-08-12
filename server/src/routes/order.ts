@@ -59,6 +59,20 @@ router.get(
 );
 
 router.get(
+  "/:id/invoice",
+  authenticate,
+  ...validate([param("id").isMongoId().withMessage("Invalid order ID")]),
+  orderController.downloadInvoice
+);
+
+router.get(
+  "/:id/packing-slip",
+  authenticate,
+  ...validate([param("id").isMongoId().withMessage("Invalid order ID")]),
+  orderController.downloadPackingSlip
+);
+
+router.get(
   "/:id/tracking",
   authenticate,
   ...validate([param("id").isMongoId().withMessage("Invalid order ID")]),

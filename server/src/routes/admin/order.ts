@@ -57,4 +57,11 @@ router.put(
   orderController.updateOrderStatus
 );
 
+router.get(
+  "/:id/invoice",
+  ...adminAuth,
+  ...validate([param("id").isMongoId().withMessage("Invalid order ID")]),
+  orderController.downloadAdminInvoice
+);
+
 export default router;

@@ -1,6 +1,10 @@
 import type { NextFunction, Request, Response } from "express";
 import { createOrder } from "../services/order/checkout.service";
 import * as orderService from "../services/order/order.service";
+import {
+  generateInvoice,
+  generatePackingSlip,
+} from "../services/order/invoice.service";
 import { ApiError } from "../utils/ApiError";
 import { success } from "../utils/apiResponse";
 import type { OrderStatus } from "../models/order/Order";
@@ -137,6 +141,78 @@ export const updateOrderStatus = async (
   try {
     const order = await orderService.updateOrderStatus(getParamId(req), req.body);
     success(res, order);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const sendPdf = (
+  res: Response,
+  buffer: Buffer,
+  filename: string
+): void => {
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader("Content-Length", buffer.length);
+  res.send(buffer);
+};
+
+export const downloadInvoice = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, "Authentication required");
+    }
+
+    const orderId = getParamId(req);
+    const buffer = await generateInvoice(
+      orderId,
+      req.user.id,
+      req.user.role
+    );
+
+    sendPdf(res, buffer, `invoice-${orderId}.pdf`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const downloadPackingSlip = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, "Authentication required");
+    }
+
+    const orderId = getParamId(req);
+    const buffer = await generatePackingSlip(
+      orderId,
+      req.user.id,
+      req.user.role
+    );
+
+    sendPdf(res, buffer, `packing-slip-${orderId}.pdf`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const downloadAdminInvoice = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const orderId = getParamId(req);
+    const buffer = await generateInvoice(orderId);
+
+    sendPdf(res, buffer, `invoice-${orderId}.pdf`);
   } catch (err) {
     next(err);
   }
