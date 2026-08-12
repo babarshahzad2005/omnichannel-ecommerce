@@ -9,6 +9,10 @@ import {
 import { clearCart, getCart } from "../cart.service";
 import { confirmSale, reserveStock } from "../inventory.service";
 import { emitOrderCreated } from "../socket/orderEvents.service";
+import {
+  notifyAdminsOrderPlaced,
+  maybeNotifyLowStock,
+} from "../notification/triggers.service";
 import { ApiError } from "../../utils/ApiError";
 
 export interface CreateOrderInput {
@@ -126,6 +130,11 @@ export const createOrder = async (
     await clearCart(userId);
 
     emitOrderCreated(order);
+    await notifyAdminsOrderPlaced(order);
+
+    for (const item of cart.items) {
+      await maybeNotifyLowStock(item.productId);
+    }
 
     return order;
   } catch (err) {

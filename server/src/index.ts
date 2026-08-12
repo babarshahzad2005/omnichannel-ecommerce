@@ -16,6 +16,7 @@ import orderRoutes from "./routes/order";
 import adminOrderRoutes from "./routes/admin/order";
 import paymentRoutes from "./routes/payment";
 import paymentWebhookRoutes from "./routes/payment.webhook";
+import notificationRoutes from "./routes/notification";
 import { ApiError } from "./utils/ApiError";
 import { startCronJobs } from "./utils/stockCron";
 
@@ -51,6 +52,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { Types } from "mongoose";
 import { getRedis } from "../../config/redis";
 import { Order } from "../../models/order/Order";
+import { notifyCustomerPaymentReceived } from "../notification/triggers.service";
 import { ApiError } from "../../utils/ApiError";
 
 const PROCESSED_EVENTS_KEY = "processed_events";
@@ -108,6 +109,7 @@ const handlePaymentIntentSucceeded = async (
   });
 
   await order.save();
+  await notifyCustomerPaymentReceived(order);
 };
 
 const handlePaymentIntentFailed = async (

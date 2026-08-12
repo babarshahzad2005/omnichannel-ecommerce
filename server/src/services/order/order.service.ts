@@ -10,6 +10,7 @@ import {
   emitOrderStatusUpdated,
   emitTrackingUpdate,
 } from "../socket/orderEvents.service";
+import { notifyCustomerOrderStatusChanged } from "../notification/triggers.service";
 
 export interface GetOrdersQuery {
   page?: number;
@@ -192,6 +193,7 @@ export const updateOrderStatus = async (
 
   emitOrderStatusUpdated(order);
   emitTrackingUpdate(order, trackingEntry);
+  await notifyCustomerOrderStatusChanged(order);
 
   return order;
 };
