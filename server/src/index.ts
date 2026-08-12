@@ -8,7 +8,9 @@ import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
 import categoryRoutes from "./routes/category";
 import productRoutes from "./routes/product";
+import inventoryRoutes from "./routes/inventory";
 import { ApiError } from "./utils/ApiError";
+import { startCronJobs } from "./utils/stockCron";
 
 dotenv.config();
 
@@ -29,6 +31,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/inventory", inventoryRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
@@ -41,6 +44,7 @@ const start = async () => {
     await connectDB();
     const redisClient = await connectRedis();
     app.locals.redis = redisClient;
+    startCronJobs();
 
     app.listen(PORT, () => {
       console.log(`\n  Server running on http://localhost:${PORT}`);
