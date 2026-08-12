@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { body, param, query } from "express-validator";
 import * as productController from "../controllers/product.controller";
+import * as reviewController from "../controllers/review.controller";
 import { authenticate, authorize } from "../middleware/auth";
 import { validate } from "../middleware/validate";
 
@@ -97,6 +98,30 @@ router.get(
   "/search",
   ...validate(searchProductsValidation),
   productController.searchProductsHandler
+);
+
+router.get(
+  "/:productId/reviews",
+  ...validate([
+    param("productId").isMongoId().withMessage("Invalid product ID"),
+    query("page").optional().isInt({ min: 1 }),
+    query("limit").optional().isInt({ min: 1, max: 100 }),
+  ]),
+  reviewController.getReviewsByProduct
+);
+
+router.post(
+  "/:productId/reviews",
+  authenticate,
+  ...validate([
+    param("productId").isMongoId().withMessage("Invalid product ID"),
+    body("rating").isInt({ min: 1, max: 5 }).withMessage("Rating must be between 1 and 5"),
+    body("title").optional().isString().trim(),
+    body("comment").optional().isString().isLength({ max: 1000 }),
+    body("images").optional().isArray(),
+    body("images.*").optional().isURL(),
+  ]),
+  reviewController.createReview
 );
 
 router.get(
