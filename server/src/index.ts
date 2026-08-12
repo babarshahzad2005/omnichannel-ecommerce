@@ -21,6 +21,7 @@ import couponRoutes from "./routes/coupon";
 import adminCouponRoutes from "./routes/admin/coupon";
 import reviewRoutes from "./routes/review";
 import adminReviewRoutes from "./routes/admin/review";
+import adminAnalyticsRoutes from "./routes/admin/analytics";
 import { ApiError } from "./utils/ApiError";
 import { startCronJobs } from "./utils/stockCron";
 
@@ -61,6 +62,7 @@ app.use("/api/coupons", couponRoutes);
 app.use("/api/admin/coupons", adminCouponRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin/reviews", adminReviewRoutes);
+app.use("/api/admin/analytics", adminAnalyticsRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));

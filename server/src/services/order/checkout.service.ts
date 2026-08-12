@@ -20,6 +20,7 @@ import {
   type CouponLineItem,
 } from "../coupon.service";
 import { ApiError } from "../../utils/ApiError";
+import { invalidateAnalyticsCache } from "../../utils/analyticsCache";
 
 export interface CreateOrderInput {
   shippingAddress: IAddress;
@@ -165,6 +166,8 @@ export const createOrder = async (
 
     await session.commitTransaction();
     await clearCart(userId);
+
+    await invalidateAnalyticsCache();
 
     emitOrderCreated(order);
     await notifyAdminsOrderPlaced(order);

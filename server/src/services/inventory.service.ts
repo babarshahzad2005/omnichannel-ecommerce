@@ -3,6 +3,7 @@ import { Inventory, type IInventory } from "../models/inventory/Inventory";
 import { StockReservation } from "../models/inventory/StockReservation";
 import { Product } from "../models/product/Product";
 import { maybeNotifyLowStock } from "./notification/triggers.service";
+import { invalidateAnalyticsCache } from "../utils/analyticsCache";
 import { ApiError } from "../utils/ApiError";
 
 export type StockStatus = "in_stock" | "low_stock" | "out_of_stock";
@@ -276,6 +277,7 @@ export const confirmSale = async (
     if (ownSession) {
       await session.commitTransaction();
       await maybeNotifyLowStock(productId, warehouse);
+      await invalidateAnalyticsCache();
     }
 
     return inventory;
@@ -311,6 +313,8 @@ export const restock = async (
     },
     { new: true, upsert: true }
   );
+
+  await invalidateAnalyticsCache();
 
   return inventory;
 };
