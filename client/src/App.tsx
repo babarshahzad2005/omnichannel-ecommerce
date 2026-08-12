@@ -7,10 +7,13 @@ import StorefrontLayout from "./layouts/StorefrontLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
+import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
 import AdminCouponsPage from "./pages/admin/AdminCouponsPage";
+import AdminCustomersPage from "./pages/admin/AdminCustomersPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import AdminFulfillmentPage from "./pages/admin/AdminFulfillmentPage";
 import AdminInventoryPage from "./pages/admin/AdminInventoryPage";
+import AdminOrderDetailPage from "./pages/admin/AdminOrderDetailPage";
 import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
@@ -67,11 +70,14 @@ function AppRoutes() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="products" element={<AdminProductsPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="orders/:id" element={<AdminOrderDetailPage />} />
           <Route path="fulfillment" element={<AdminFulfillmentPage />} />
           <Route path="inventory" element={<AdminInventoryPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="coupons" element={<AdminCouponsPage />} />
+          <Route path="customers" element={<AdminCustomersPage />} />
         </Route>
       </Route>
 

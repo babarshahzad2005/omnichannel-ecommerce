@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Boxes,
+  FolderTree,
   LayoutDashboard,
   LogOut,
   Package,
@@ -11,6 +12,7 @@ import {
   Tag,
   Truck,
   User,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import type { UserRole } from "../types/auth";
@@ -39,6 +41,12 @@ const NAV_ITEMS: NavItem[] = [
     label: "Products",
     path: "/admin/products",
     icon: Package,
+    roles: ["superAdmin", "vendorManager"],
+  },
+  {
+    label: "Categories",
+    path: "/admin/categories",
+    icon: FolderTree,
     roles: ["superAdmin", "vendorManager"],
   },
   {
@@ -71,6 +79,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: Tag,
     roles: ["superAdmin"],
   },
+  {
+    label: "Customers",
+    path: "/admin/customers",
+    icon: Users,
+    roles: ["superAdmin"],
+  },
 ];
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -82,6 +96,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 function breadcrumbLabel(pathname: string): string {
   if (pathname === "/admin") return "Dashboard";
+  if (pathname.match(/\/admin\/orders\/[^/]+$/)) return "Order Detail";
   const segment = pathname.split("/").filter(Boolean).pop() ?? "Dashboard";
   return segment.charAt(0).toUpperCase() + segment.slice(1);
 }
@@ -115,7 +130,8 @@ export default function AdminLayout() {
             const isActive =
               item.path === "/admin"
                 ? location.pathname === "/admin"
-                : location.pathname.startsWith(item.path);
+                : location.pathname === item.path ||
+                  location.pathname.startsWith(`${item.path}/`);
 
             return (
               <Link
