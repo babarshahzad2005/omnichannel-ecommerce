@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
-import { addToCart } from "../../services/cartService";
+import { useCartStore } from "../../store/cartStore";
 import type { Product, StockStatus } from "../../types/product";
 import {
   formatPrice,
@@ -19,6 +19,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, stockStatus }: ProductCardProps) {
   const [adding, setAdding] = useState(false);
+  const addItem = useCartStore((state) => state.addItem);
   const primaryImage = getPrimaryImage(product.images);
   const discount = getDiscountPercent(product.price, product.compareAtPrice);
   const isOutOfStock = stockStatus === "out_of_stock";
@@ -31,7 +32,7 @@ export default function ProductCard({ product, stockStatus }: ProductCardProps) 
 
     setAdding(true);
     try {
-      await addToCart({ productId: product._id, qty: 1 });
+      await addItem(product._id, 1);
       toast.success("Added to cart");
     } catch {
       // Error toast handled by axios interceptor

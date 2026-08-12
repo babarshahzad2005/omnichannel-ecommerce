@@ -8,34 +8,19 @@ import {
   User,
   LayoutDashboard,
 } from "lucide-react";
-import api from "../services/api";
 import { useAuthStore } from "../store/authStore";
-import type { ApiResponse } from "../types/auth";
-
-interface CartSummary {
-  items: { quantity: number }[];
-}
+import { useCartStore } from "../store/cartStore";
 
 export default function StorefrontLayout() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const [cartCount, setCartCount] = useState(0);
+  const { itemCount, fetchCart } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const fetchCartCount = async () => {
-      try {
-        const response = await api.get<ApiResponse<CartSummary>>("/cart");
-        const items = response.data.data?.items ?? [];
-        setCartCount(items.reduce((sum, item) => sum + item.quantity, 0));
-      } catch {
-        setCartCount(0);
-      }
-    };
-
-    fetchCartCount();
-  }, []);
+    void fetchCart();
+  }, [fetchCart]);
 
   const handleLogout = async () => {
     await logout();
@@ -83,9 +68,9 @@ export default function StorefrontLayout() {
               aria-label="Cart"
             >
               <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
+              {itemCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-cobalt-600 px-1 text-[10px] font-medium text-white">
-                  {cartCount > 99 ? "99+" : cartCount}
+                  {itemCount > 99 ? "99+" : itemCount}
                 </span>
               )}
             </Link>

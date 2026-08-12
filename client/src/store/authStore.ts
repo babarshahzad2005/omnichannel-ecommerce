@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "../services/api";
+import { useCartStore } from "./cartStore";
 import type { ApiResponse, User } from "../types/auth";
 
 interface AuthState {
@@ -11,6 +12,15 @@ interface AuthState {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
+
+const syncCartAfterAuth = async (): Promise<void> => {
+  const { mergeAfterLogin, fetchCart } = useCartStore.getState();
+  try {
+    await mergeAfterLogin();
+  } catch {
+    await fetchCart();
+  }
+};
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -28,6 +38,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: Boolean(response.data.data),
       loading: false,
     });
+
+    await syncCartAfterAuth();
   },
 
   register: async (name, email, password) => {
@@ -42,6 +54,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: Boolean(response.data.data),
       loading: false,
     });
+
+    await syncCartAfterAuth();
   },
 
   logout: async () => {
@@ -51,6 +65,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: false,
       loading: false,
     });
+    useCartStore.getState().reset();
+    await useCartStore.getState().fetchCart();
   },
 
   checkAuth: async () => {
@@ -63,12 +79,14 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: Boolean(response.data.data),
         loading: false,
       });
+      await syncCartAfterAuth();
     } catch {
       set({
         user: null,
         isAuthenticated: false,
         loading: false,
       });
+      await useCartStore.getState().fetchCart();
     }
   },
 }));

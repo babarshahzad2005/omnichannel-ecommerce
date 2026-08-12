@@ -7,7 +7,7 @@ import ProductReviews from "../../components/products/ProductReviews";
 import RatingStars from "../../components/products/RatingStars";
 import StockBadge from "../../components/products/StockBadge";
 import api from "../../services/api";
-import { addToCart } from "../../services/cartService";
+import { useCartStore } from "../../store/cartStore";
 import type { ApiResponse } from "../../types/auth";
 import type { Product, PublicStockStatus, StockStatus, VariantOption } from "../../types/product";
 import {
@@ -30,6 +30,7 @@ const TABS: { id: TabId; label: string }[] = [
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const addItem = useCartStore((state) => state.addItem);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [stockStatus, setStockStatus] = useState<StockStatus>("in_stock");
@@ -112,11 +113,7 @@ export default function ProductDetailPage() {
 
     setAdding(true);
     try {
-      await addToCart({
-        productId: product._id,
-        qty: quantity,
-        variantSku,
-      });
+      await addItem(product._id, quantity, variantSku);
       toast.success(redirectToCheckout ? "Proceeding to checkout..." : "Added to cart");
 
       if (redirectToCheckout) {
