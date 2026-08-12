@@ -1,4 +1,5 @@
 ﻿import { createClient, type RedisClientType } from "redis";
+import { env } from "./env";
 
 let redisClient: RedisClientType | null = null;
 
@@ -7,7 +8,7 @@ export const connectRedis = async (): Promise<RedisClientType> => {
     return redisClient;
   }
 
-  const client = createClient({ url: process.env.REDIS_URL });
+  const client = createClient({ url: env.redisUrl });
   client.on("error", (err) => console.error("Redis error:", err));
   await client.connect();
   console.log("  Redis connected");

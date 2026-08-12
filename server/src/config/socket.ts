@@ -2,6 +2,7 @@ import type { Server as HttpServer } from "http";
 import { Server, type Namespace } from "socket.io";
 import type { UserRole } from "../models/user/User";
 import { verifyAccessToken } from "../utils/jwt";
+import { env } from "./env";
 
 const ADMIN_ROLES: UserRole[] = [
   "superAdmin",
@@ -51,7 +52,7 @@ const extractAccessToken = (handshake: {
 export const initSocket = (httpServer: HttpServer): Server => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL,
+      origin: env.clientUrl,
       credentials: true,
     },
   });
