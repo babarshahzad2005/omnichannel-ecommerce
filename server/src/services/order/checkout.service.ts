@@ -8,6 +8,7 @@ import {
 } from "../../models/order/Order";
 import { clearCart, getCart } from "../cart.service";
 import { confirmSale, reserveStock } from "../inventory.service";
+import { emitOrderCreated } from "../socket/orderEvents.service";
 import { ApiError } from "../../utils/ApiError";
 
 export interface CreateOrderInput {
@@ -123,6 +124,8 @@ export const createOrder = async (
 
     await session.commitTransaction();
     await clearCart(userId);
+
+    emitOrderCreated(order);
 
     return order;
   } catch (err) {

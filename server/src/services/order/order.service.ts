@@ -6,6 +6,10 @@ import {
   type OrderStatus,
 } from "../../models/order/Order";
 import { ApiError } from "../../utils/ApiError";
+import {
+  emitOrderStatusUpdated,
+  emitTrackingUpdate,
+} from "../socket/orderEvents.service";
 
 export interface GetOrdersQuery {
   page?: number;
@@ -185,5 +189,9 @@ export const updateOrderStatus = async (
   }
 
   await order.save();
+
+  emitOrderStatusUpdated(order);
+  emitTrackingUpdate(order, trackingEntry);
+
   return order;
 };

@@ -1,9 +1,11 @@
 ﻿import express from "express";
+import { createServer } from "http";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import { connectRedis } from "./config/redis";
+import { initSocket } from "./config/socket";
 import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
 import categoryRoutes from "./routes/category";
@@ -20,6 +22,7 @@ import { startCronJobs } from "./utils/stockCron";
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
@@ -61,10 +64,12 @@ const start = async () => {
     const redisClient = await connectRedis();
     app.locals.redis = redisClient;
     startCronJobs();
+    initSocket(httpServer);
 
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log(`\n  Server running on http://localhost:${PORT}`);
-      console.log(`  Health check: http://localhost:${PORT}/api/health\n`);
+      console.log(`  Health check: http://localhost:${PORT}/api/health`);
+      console.log(`  Socket.io namespace: /orders\n`);
     });
   } catch (err) {
     console.error("Failed to start:", err);
