@@ -197,6 +197,7 @@ productSchema.index({ name: "text", description: "text", tags: "text" });
 productSchema.index({ brand: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ isActive: 1, isFeatured: 1 });
+productSchema.index({ category: 1, price: 1, averageRating: 1, isActive: 1 });
 
 productSchema.pre("save", async function () {
   if (!this.isModified("name") && this.slug) {

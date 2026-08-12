@@ -79,6 +79,26 @@ const listProductsValidation = [
   query("fields").optional().isString().withMessage("Fields must be a comma-separated string"),
 ];
 
+const searchProductsValidation = [
+  query("keyword").optional().isString().withMessage("Keyword must be a string"),
+  query("category").optional().isMongoId().withMessage("Invalid category ID"),
+  query("brand").optional().isString().withMessage("Brand must be a string"),
+  query("minPrice").optional().isFloat({ min: 0 }).withMessage("minPrice must be >= 0"),
+  query("maxPrice").optional().isFloat({ min: 0 }).withMessage("maxPrice must be >= 0"),
+  query("tags").optional().isString().withMessage("Tags must be a comma-separated string"),
+  query("rating").optional().isFloat({ min: 0, max: 5 }).withMessage("Rating must be between 0 and 5"),
+  query("sortBy").optional().isString().withMessage("sortBy must be a string"),
+  query("page").optional().isInt({ min: 1 }).withMessage("Page must be >= 1"),
+  query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),
+  query("facets").optional().isIn(["true", "false"]).withMessage("facets must be true or false"),
+];
+
+router.get(
+  "/search",
+  ...validate(searchProductsValidation),
+  productController.searchProductsHandler
+);
+
 router.get(
   "/",
   ...validate(listProductsValidation),

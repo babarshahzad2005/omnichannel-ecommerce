@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import * as productService from "../services/product.service";
+import { searchProducts } from "../services/product/search.service";
 import { ApiError } from "../utils/ApiError";
 import { success } from "../utils/apiResponse";
 
@@ -29,6 +30,38 @@ const parseTagsQuery = (value: unknown): string[] | undefined => {
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
+};
+
+export const searchProductsHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const page = req.query.page ? Number(req.query.page) : 1;
+    const limit = req.query.limit ? Number(req.query.limit) : 20;
+    const minPrice = req.query.minPrice ? Number(req.query.minPrice) : undefined;
+    const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : undefined;
+    const rating = req.query.rating ? Number(req.query.rating) : undefined;
+
+    const result = await searchProducts({
+      keyword: typeof req.query.keyword === "string" ? req.query.keyword : undefined,
+      category: typeof req.query.category === "string" ? req.query.category : undefined,
+      brand: typeof req.query.brand === "string" ? req.query.brand : undefined,
+      minPrice,
+      maxPrice,
+      tags: parseTagsQuery(req.query.tags),
+      rating,
+      sortBy: typeof req.query.sortBy === "string" ? req.query.sortBy : undefined,
+      page,
+      limit,
+      facets: parseBooleanQuery(req.query.facets),
+    });
+
+    success(res, result);
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const createProduct = async (
