@@ -36,6 +36,15 @@
 - Inventory uses `reservedQty` field for checkout stock holding (15-min TTL)
 - Indexes on all queryable fields + compound indexes for common queries
 
+## UI Reference
+- Visual mockups for all pages are in docs/ui/ folder — see docs/ui/README.md for the screen map
+- When building any UI page, check the matching mockup image in docs/ui/ first
+- Follow the visual direction, layout hierarchy, and component grouping shown in the mockups
+- The mockups show a light enterprise-commerce theme: off-white canvas, white cards, dark navy text, cobalt blue primary actions, mint green success states, amber for attention/warnings
+- Customer pages use full storefront header; admin/vendor/warehouse pages use a persistent dark-navy sidebar
+- Preserve the status labels shown in mockups — they correspond to the order state machine: pending_payment, processing, confirmed, shipped, delivered, cancelled
+- The mockups are conceptual references for layout, component grouping, and visual states — use real backend data and validation from the development plan PDF when implementing
+
 ## Reference Document
 - Full development plan with schemas, API specs, and roadmap: docs/OmniChannel_ECommerce_Development_Plan.pdf
 - When building any feature, consult the PDF first for field-level schema details

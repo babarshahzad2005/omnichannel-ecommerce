@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db";
 import { connectRedis } from "./config/redis";
+import authRoutes from "./routes/auth";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ app.use(cookieParser());
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+app.use("/api/auth", authRoutes);
 
 const start = async () => {
   try {
