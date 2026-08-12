@@ -13,6 +13,12 @@ import {
   notifyAdminsOrderPlaced,
   maybeNotifyLowStock,
 } from "../notification/triggers.service";
+import {
+  rollbackCouponUse,
+  useCoupon,
+  validateCoupon,
+  type CouponLineItem,
+} from "../coupon.service";
 import { ApiError } from "../../utils/ApiError";
 
 export interface CreateOrderInput {
@@ -23,21 +29,24 @@ export interface CreateOrderInput {
   notes?: string;
 }
 
+const roundMoney = (value: number): number =>
+  Math.round(value * 100) / 100;
+
 const calculateTotals = (
   subtotal: number,
-  couponCode?: string
+  discount: number,
+  freeShipping: boolean
 ): {
   tax: number;
   shippingCost: number;
   discount: number;
   total: number;
 } => {
-  const tax = Math.round(subtotal * 0.08 * 100) / 100;
-  const shippingCost = subtotal >= 100 ? 0 : 9.99;
-  const discount = couponCode ? Math.round(subtotal * 0.1 * 100) / 100 : 0;
-  const total = Math.max(
-    Math.round((subtotal + tax + shippingCost - discount) * 100) / 100,
-    0
+  const taxableAmount = Math.max(subtotal - discount, 0);
+  const tax = roundMoney(taxableAmount * 0.08);
+  const shippingCost = freeShipping || subtotal >= 100 ? 0 : 9.99;
+  const total = roundMoney(
+    Math.max(subtotal + tax + shippingCost - discount, 0)
   );
 
   return { tax, shippingCost, discount, total };
@@ -53,11 +62,45 @@ export const createOrder = async (
     throw new ApiError(400, "Cart is empty");
   }
 
+  const couponItems: CouponLineItem[] = cart.items.map((item) => ({
+    productId: item.productId,
+    price: item.price,
+    qty: item.qty,
+    subtotal: item.subtotal,
+  }));
+
+  const subtotal = cart.cartTotal;
+  let discount = 0;
+  let freeShipping = false;
+  let appliedCouponCode: string | undefined;
+
+  if (input.couponCode) {
+    const couponResult = await validateCoupon(
+      input.couponCode,
+      userId,
+      subtotal,
+      couponItems
+    );
+
+    discount = couponResult.discount;
+    freeShipping = couponResult.freeShipping;
+    appliedCouponCode = couponResult.coupon.code;
+  }
+
+  const totals = calculateTotals(subtotal, discount, freeShipping);
+
   const checkoutSessionId = `checkout-${randomUUID()}`;
   const session = await mongoose.startSession();
   session.startTransaction();
 
+  let couponUsed = false;
+
   try {
+    if (appliedCouponCode) {
+      await useCoupon(appliedCouponCode, userId, session);
+      couponUsed = true;
+    }
+
     for (const item of cart.items) {
       await reserveStock(
         item.productId,
@@ -67,12 +110,6 @@ export const createOrder = async (
         session
       );
     }
-
-    const subtotal = cart.cartTotal;
-    const { tax, shippingCost, discount, total } = calculateTotals(
-      subtotal,
-      input.couponCode
-    );
 
     const orderItems = cart.items.map((item) => ({
       product: new Types.ObjectId(item.productId),
@@ -98,11 +135,11 @@ export const createOrder = async (
           paymentStatus: "pending",
           orderStatus,
           subtotal,
-          tax,
-          shippingCost,
-          discount,
-          total,
-          couponCode: input.couponCode,
+          tax: totals.tax,
+          shippingCost: totals.shippingCost,
+          discount: totals.discount,
+          total: totals.total,
+          couponCode: appliedCouponCode,
           notes: input.notes,
           trackingInfo: [
             {
@@ -139,6 +176,10 @@ export const createOrder = async (
     return order;
   } catch (err) {
     await session.abortTransaction();
+
+    if (couponUsed && appliedCouponCode) {
+      await rollbackCouponUse(appliedCouponCode);
+    }
 
     if (err instanceof ApiError) {
       throw err;
