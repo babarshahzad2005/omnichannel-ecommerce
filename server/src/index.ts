@@ -12,6 +12,8 @@ import inventoryRoutes from "./routes/inventory";
 import cartRoutes from "./routes/cart";
 import orderRoutes from "./routes/order";
 import adminOrderRoutes from "./routes/admin/order";
+import paymentRoutes from "./routes/payment";
+import paymentWebhookRoutes from "./routes/payment.webhook";
 import { ApiError } from "./utils/ApiError";
 import { startCronJobs } from "./utils/stockCron";
 
@@ -24,6 +26,13 @@ app.use(cors({
   origin: process.env.CLIENT_URL,
   credentials: true
 }));
+
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" }),
+  paymentWebhookRoutes
+);
+
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
@@ -38,6 +47,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
