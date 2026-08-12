@@ -6,6 +6,7 @@ import { connectDB } from "./config/db";
 import { connectRedis } from "./config/redis";
 import { errorHandler } from "./middleware/errorHandler";
 import authRoutes from "./routes/auth";
+import categoryRoutes from "./routes/category";
 import { ApiError } from "./utils/ApiError";
 
 dotenv.config();
@@ -25,6 +26,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
